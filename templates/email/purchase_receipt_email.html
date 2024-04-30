@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Receipt</title>
+</head>
+<body>
+    <h2>Ваш чек с покупкой</h2>
+    <p>Добрый день, {{ purchase.user.firstname }}</p>
+    <p>Прикрепляем ваш чек с информацией о покупке:</p>
+    <ul>
+        <li><strong>Дата и время:</strong> {{ purchase.formatted_date_time }}</li>
+        <li><strong>Общая стоимость:</strong> {{ purchase.total_price }} ₽</li>
+    </ul>
+    <p>Детали покупки:</p>
+    <table border="1">
+        <tr>
+            <th>Продукт</th>
+            <th>Количество</th>
+            <th>Цена за единицу</th>
+        </tr>
+        {% for purchase_item in purchase.purchaseitem_set.all %}
+        <tr>
+            <td>{{ purchase_item.product.name }}</td>
+            <td>{{ purchase_item.quantity }}</td>
+            <td>{{ purchase_item.product.price_per_unit }} ₽</td>
+            
+        </tr>
+        {% endfor %}
+    </table>
+    <p>Спасибо за вашу покупку!</p>
+</body>
+</html>

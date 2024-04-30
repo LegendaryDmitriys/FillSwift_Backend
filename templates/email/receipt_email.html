@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt</title>
+</head>
+<body>
+    <h2>Ваш чек с заправкой</h2>
+    <p>Добрый день, {{refueling.user.firstname}}</p>
+    <p>Прикрепляем ваш чек с информацией о заправке:</p>
+    <ul>
+        <li><strong>Дата и время:</strong> {{ refueling.formatted_date_time }}</li>
+        <li><strong>АЗС:</strong> {{ refueling.fuel_column.fuel_station.id }} - {{ refueling.fuel_column.fuel_station.location }}</li>
+        <li><strong>Тип топлива:</strong> {{ refueling.fuel_type.name }} - {{ refueling.fuel_type.octane_number }}</li>
+        <li><strong>Количество топлива:</strong> {{ refueling.fuel_quantity }} л</li>
+        <li><strong>Стоимость топлива:</strong> {{ refueling.fuel_cost }} руб</li>
+    </ul>
+    <p>Спасибо за использование наших услуг!</p>
+</body>
+</html>
