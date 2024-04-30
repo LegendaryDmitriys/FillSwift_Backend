@@ -7,7 +7,7 @@
 
 1. Склонируйте репозиторий: 
  
-python git clone https://github.com/LegendaryDmitriys/FillSwift_Backend
+```git clone https://github.com/LegendaryDmitriys/FillSwift_Backend```
 
 
 2. Установите зависимости:
