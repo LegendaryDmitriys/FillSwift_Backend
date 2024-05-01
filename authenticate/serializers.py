@@ -8,7 +8,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         max_length=128,
         min_length=8,
-        write_only=True
+        write_only=True,
     )
     token = serializers.CharField(max_length=255, read_only=True)
 
@@ -26,6 +26,7 @@ class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=255, read_only=True)
     password = serializers.CharField(max_length=128, write_only=True)
     token = serializers.CharField(max_length=255, read_only=True)
+    is_staff = serializers.BooleanField(read_only=True)
 
     def validate(self, data):
         email = data.get('email', None)
@@ -58,14 +59,16 @@ class LoginSerializer(serializers.Serializer):
         return {
             'email': user.email,
             'username': user.username,
-            'token': user.token
+            'token': user.token,
+            'is_staff': user.is_staff,
         }
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         max_length=128,
         min_length=8,
-        write_only=True
+        write_only=True,
+        required = False
     )
 
     class Meta:

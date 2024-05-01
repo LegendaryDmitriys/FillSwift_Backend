@@ -1,13 +1,14 @@
 import json
 from django.utils import timezone
 
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from Gas import settings
+from Gas.settings import DEFAULT_FROM_EMAIL
 from .renderers import UserJSONRenderer
 from .serializers import (
     LoginSerializer, RegistrationSerializer, UserSerializer,
@@ -17,6 +18,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import PasswordResetCode, User
 import json
+import random
+import string
 
 class RegistrationAPIView(APIView):
     renderer_classes = (UserJSONRenderer,)
@@ -88,6 +91,52 @@ def generate_code(request):
             return JsonResponse({'error': 'Адрес электронной почты не указан.'}, status=400)
     else:
         return JsonResponse({'error': 'Метод запроса не поддерживается.'}, status=405)
+
+class UserListAPIView(APIView):
+    def get(self, request):
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+
+class UserDetailsRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+    lookup_field = 'id'
+
+
+
+@csrf_exempt
+def reset_password_admin(request):
+    if request.method == 'POST':
+        data = json.loads(request.body.decode('utf-8'))
+        user_id = data.get('user_id')
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'Пользователь с указанным ID не найден.'}, status=400)
+
+        new_password = generate_random_password()
+        user.set_password(new_password)
+        user.save()
+
+        send_password_reset_email(user.email, new_password)
+
+        return JsonResponse({'message': 'Пароль пользователя успешно сброшен и отправлен на почту.'})
+    else:
+        return JsonResponse({'error': 'Метод запроса не поддерживается.'}, status=405)
+
+def generate_random_password(length=8):
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for i in range(length))
+
+def send_password_reset_email(email, new_password):
+    subject = 'Сброс пароля'
+    message = f'Ваш новый пароль: {new_password}'
+    sender = DEFAULT_FROM_EMAIL
+    send_mail(subject, message, sender, [email])
+
 
 
 @csrf_exempt

@@ -192,7 +192,7 @@ def create_purchase_pdf_and_send_receipt(sender, instance, created, **kwargs):
         html_message = render_to_string('email/purchase_receipt_email.html', {'purchase': instance})
         plain_message = strip_tags(html_message)
         from_email = DEFAULT_FROM_EMAIL
-        to_email = "dimaklockov24@gmail.com"
+        to_email = instance.user.email
 
         try:
             send_mail(subject, plain_message, from_email, [to_email], html_message=html_message, fail_silently=False)
@@ -308,6 +308,8 @@ class CarRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         user_id = self.kwargs['user_id']
         return Car.objects.filter(user_id=user_id)
+
+
 
 
 class UserRefuelingHistoryList(generics.ListAPIView):

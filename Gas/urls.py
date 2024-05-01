@@ -47,6 +47,7 @@ cars_patterns = [
     path('users/', CarListCreate.as_view(), name='user_list_create'),
     path('user/<int:user_id>', UserCarsListView.as_view(), name='user_cars_detail'),
     path('user/<int:user_id>/<int:pk>/', CarRetrieveUpdateDestroy.as_view(), name='car-detail'),
+
 ]
 
 
