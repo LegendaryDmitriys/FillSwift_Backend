@@ -7,7 +7,7 @@ from rest_framework import routers
 from django.conf import settings
 
 router = routers.DefaultRouter()
-from django.contrib.auth import views as auth_views
+
 
 
 refulings_patterns = [
@@ -46,7 +46,8 @@ cars_patterns = [
     path('model/<int:pk>/', CarModelRetrieveUpdateDestroy.as_view(), name='car_model_retrieve_update_destroy'),
     path('users/', CarListCreate.as_view(), name='user_list_create'),
     path('user/<int:user_id>', UserCarsListView.as_view(), name='user_cars_detail'),
-    path('user/<int:user_id>/<int:pk>/', CarRetrieveUpdateDestroy.as_view(), name='car-detail'),
+    path('user/<int:user_id>/<int:pk>/', CarUsersRetrieveUpdateDestroy.as_view(), name='car-detail'),
+    path('cars/<int:id>/', CarRetrieveUpdateDestroy.as_view(), name='car-detail'),
 
 ]
 

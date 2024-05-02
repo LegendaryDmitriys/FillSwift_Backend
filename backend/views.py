@@ -302,7 +302,7 @@ class UserCarsListView(APIView):
         return Response(serializer.data)
 
 
-class CarRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+class CarUsersRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CarSerializer
 
     def get_queryset(self):
@@ -310,6 +310,14 @@ class CarRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         return Car.objects.filter(user_id=user_id)
 
 
+
+class CarRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CarSerializer
+    lookup_field = 'id'
+
+    def get_queryset(self):
+        id = self.kwargs['id']
+        return Car.objects.filter(id=id)
 
 
 class UserRefuelingHistoryList(generics.ListAPIView):
