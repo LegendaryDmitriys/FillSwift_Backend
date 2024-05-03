@@ -68,25 +68,36 @@ class UserSerializer(serializers.ModelSerializer):
         max_length=128,
         min_length=8,
         write_only=True,
-        required = False
+        required=False
     )
+
+    avatar = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'password', 'token','lastname', 'firstname', 'id')
+        fields = ('email', 'username', 'password', 'token', 'lastname', 'firstname', 'id', 'avatar')
 
         read_only_fields = ('token',)
 
+    def create(self, validated_data):
+        avatar = validated_data.pop('avatar', None)
+        user = super().create(validated_data)
+        if avatar:
+            user.avatar = avatar
+            user.save()
+        return user
+
     def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)
-
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-
-        if password is not None:
-            instance.set_password(password)
-
-
-        instance.save()
-
+        avatar = validated_data.pop('avatar', None)
+        instance = super().update(instance, validated_data)
+        if avatar:
+            instance.avatar = avatar
+            instance.save()
         return instance
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        request = self.context.get('request')
+        if request and instance.avatar:
+            representation['avatar'] = request.build_absolute_uri(instance.avatar.url)
+        return representation
