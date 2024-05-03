@@ -94,7 +94,7 @@ def generate_code(request):
 class UserListAPIView(APIView):
     def get(self, request):
         users = User.objects.all()
-        serializer = UserSerializer(users, many=True)
+        serializer = UserSerializer(users, many=True, context={'request': request})
         return Response(serializer.data)
 
 class UserDetailsRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
