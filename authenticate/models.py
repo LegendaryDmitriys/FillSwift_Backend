@@ -55,6 +55,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     avatar = models.ImageField(upload_to='avatars', null=True, blank=True)
+    total_spent = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_refueled = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
@@ -108,6 +111,15 @@ class User(AbstractBaseUser, PermissionsMixin):
         avatar_image.save(avatar_path)
 
         return avatar_path
+
+    def update_total_spent(self, amount):
+        self.total_spent += amount
+        self.save()
+
+    def update_total_refueled(self, quantity, cost):
+        self.total_refueled += quantity
+        self.total_spent += cost
+        self.save()
 
 
 class PasswordResetCode(models.Model):

@@ -19,7 +19,7 @@ import os
 from Gas import settings
 from Gas.settings import MEDIA_ROOT, DEFAULT_FROM_EMAIL
 from backend.models import Product, RefuelingHistory, CarBrand, CarModel, Car, Basket, BasketProduct, FuelStation, \
-    Purchase, PurchaseItem
+    Purchase, PurchaseItem, ProductImage
 from backend.serializers import ProductSerializer, RefuelingHistorySerializer, \
     CarModelSerializer, CarBrandSerializer, CarSerializer, BasketSerializer, BasketProductSerializer, \
     FuelStationSerializer, CarBrandWithModelsSerializer, PurchaseSerializer
@@ -403,7 +403,43 @@ def download_receipt(request, refueling_id):
         return HttpResponse(f"Ошибка при скачивании файла: {str(e)}", status=500)
 
 
-# Заправки
+def refueling_requests_list(request):
+    refueling_requests = RefuelingHistory.objects.filter(status='pending').select_related('user', 'car', 'fuel_column', 'fuel_type').values(
+        'id',
+        'user__id', 'user__username', 'user__email', 'user__lastname', 'user__firstname',
+        'car__id', 'car__model__name', 'car__brand__name', 'car__registration_number',
+        'fuel_column__id', 'fuel_column__number',
+        'fuel_type__id', 'fuel_type__name', 'fuel_column__fuel_type__octane_number',
+        'fuel_quantity',
+        'refueling_id',
+        'fuel_cost'
+    )
+    return JsonResponse({'refueling_requests': list(refueling_requests)})
+
+@csrf_exempt
+def change_refueling_request_status(request, refueling_request_id):
+    try:
+        refueling_request = RefuelingHistory.objects.get(id=refueling_request_id)
+    except RefuelingHistory.DoesNotExist:
+        return JsonResponse({'message': 'Запрос на заправку не найден'}, status=404)
+
+    if request.method == 'PATCH':
+        try:
+            request_data = json.loads(request.body)
+            new_status = request_data.get('status')
+        except json.JSONDecodeError:
+            return JsonResponse({'message': 'Неверный формат данных'}, status=400)
+
+
+
+        if new_status in dict(RefuelingHistory.STATUS_CHOICES):
+            refueling_request.status = new_status
+            refueling_request.save()
+            return JsonResponse({'message': 'Статус успешно изменен', 'new_status': new_status})
+        else:
+            return JsonResponse({'message': 'Недопустимое значение статуса'}, status=400)
+
+    return JsonResponse({'message': 'Метод не разрешен'}, status=405)
 
 class FuelStationListCreateAPIView(generics.ListCreateAPIView):
     queryset = FuelStation.objects.all()
@@ -423,51 +459,3 @@ class PopularProductsAPIView(APIView):
         products = Product.objects.filter(id__in=product_ids)
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
-
-# class UserCarsView(models.Model):
-#     user_username = models.CharField(max_length=150)
-#     car_brand = models.CharField(max_length=100)
-#     car_model = models.CharField(max_length=100)
-#     registration_number = models.CharField(max_length=20)
-#
-#     class Meta:
-#         managed = False
-#         db_table = 'user_cars_view'
-#
-#
-# user_cars = UserCarsView.objects.all()
-# for car in user_cars:
-#     print(car.user_username, car.car_brand, car.car_model, car.registration_number)
-
-# class FuelStationInfoView(models.Model):
-#     station_name = models.CharField(max_length=100)
-#     station_location = models.CharField(max_length=255)
-#     column_number = models.IntegerField()
-#     fuel_type = models.CharField(max_length=50)
-#     column_fuel_quantity = models.DecimalField(max_digits=10, decimal_places=2)
-#     price_per_liter = models.DecimalField(max_digits=6, decimal_places=2)
-#
-#     class Meta:
-#         managed = False
-#         db_table = 'fuel_station_info_view'
-
-# class Migration_Remove_Product_From_Basket(migrations.Migration):
-#     operations = [
-#         migrations.RunSQL('''
-#             CREATE OR REPLACE FUNCTION remove_product_from_basket(
-#                 IN user_id INT,
-#                 IN product_id INT
-#             )
-#             RETURNS VOID
-#             AS $$
-#             BEGIN
-#                 DELETE FROM backend_basketproduct
-#                 WHERE basket_id = (SELECT id FROM backend_basket WHERE user_id = user_id)
-#                 AND product_id = product_id;
-#             END;
-#             $$ LANGUAGE plpgsql;
-#         ''')
-#     ]
-
-
-

@@ -14,6 +14,8 @@ refulings_patterns = [
     path('refuelings/', RefuelingHistoryListCreate.as_view(), name='refueling-history-list-create'),
     path('<int:user_id>/refuelings/', UserRefuelingHistoryList.as_view(), name='refueling-history-retrieve-update-destroy'),
     path('download/receipt/<int:refueling_id>/', download_receipt, name='download_receipt'),
+    path('refueling_requests/', refueling_requests_list, name='refueling_requests_list'),
+    path('change_refueling_request_status/<int:refueling_request_id>/', change_refueling_request_status, name='change_refueling_request_status'),
 ]
 
 card_patterns = [

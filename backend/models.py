@@ -1,5 +1,6 @@
 # models.py
 import os
+from decimal import Decimal
 
 from django.db import models
 from django.conf import settings
@@ -13,7 +14,7 @@ User = get_user_model()
 
 def product_image_path(instance, filename):
     basename, extension = os.path.splitext(filename)
-    new_filename = f"{instance.name}_{instance.id}{extension}"
+    new_filename = f"{instance.product.name}_{instance.id}{extension}"
     return os.path.join('product_images', new_filename)
 
 
@@ -35,6 +36,7 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.product.name}"
+
 
 
 class Basket(models.Model):
@@ -61,6 +63,11 @@ class Purchase(models.Model):
     def formatted_date_time(self):
         return self.purchase_date.astimezone(timezone.get_default_timezone()).strftime('%Y-%m-%d %H:%M:%S')
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.user.update_total_spent(Decimal(str(self.total_price)))
+
+
 class PurchaseItem(models.Model):
     purchase = models.ForeignKey(Purchase, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -75,12 +82,22 @@ class RefuelingHistory(models.Model):
     fuel_quantity = models.DecimalField(max_digits=10, decimal_places=2)
     refueling_id = models.ForeignKey('FuelStation', on_delete=models.CASCADE)
     fuel_cost = models.DecimalField(max_digits=10, decimal_places=2)
+    STATUS_CHOICES = (
+        ('pending', 'Ожидание подтверждения'),
+        ('confirmed', 'Подтверждено'),
+        ('rejected', 'Отклонено'),
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
     def formatted_date_time(self):
         return self.refueling_date_time.astimezone(timezone.get_default_timezone()).strftime('%Y-%m-%d %H:%M:%S')
 
     def __str__(self):
-        return f"{self.refueling_date_time.strftime('%Y-%m-%d %H:%M:%S')}"
+        return self.refueling_date_time.astimezone(timezone.get_default_timezone()).strftime('%Y-%m-%d %H:%M:%S')
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.user.update_total_refueled(self.fuel_quantity, self.fuel_cost)
 
 
 class CarBrand(models.Model):
@@ -116,7 +133,7 @@ class FuelType(models.Model):
     octane_number = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.name}, {self.octane_number}"
 
 
 class FuelColumn(models.Model):
