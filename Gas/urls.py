@@ -27,6 +27,8 @@ card_patterns = [
          name='basket-product-detail'),
     path('purchases/', PurchaseListCreate.as_view(), name='purchase-list'),
     path('purchase/<int:user_id>/', PurchaseDetail.as_view(), name='purchase-detail'),
+    path('purchases-list/', purchase_list, name='purchase-list'),
+    path('purchase/<int:purchase_id>/change_status/', change_purchase_status, name='change_purchase_status'),
 ]
 
 fuelstation_patterns = [
@@ -62,6 +64,7 @@ urlpatterns = [
     path('products/', include(product_patterns)),
     path('refuling/', include(refulings_patterns)),
     path('cars/', include(cars_patterns)),
-    path('fuelstation/', include(fuelstation_patterns))
+    path('fuelstation/', include(fuelstation_patterns)),
+    path('stats/', PurchaseAndRefuelingStats.as_view(), name='stats')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

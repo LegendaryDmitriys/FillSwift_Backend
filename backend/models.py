@@ -59,13 +59,26 @@ class Purchase(models.Model):
     products = models.ManyToManyField(Product, through='PurchaseItem')
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     purchase_date = models.DateTimeField(auto_now_add=True)
+    STATUS_CHOICES = (
+        ('pending', 'В ожидании'),
+        ('confirmed', 'Подтверждено'),
+        ('rejected', 'Отклонено'),
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
 
     def formatted_date_time(self):
         return self.purchase_date.astimezone(timezone.get_default_timezone()).strftime('%Y-%m-%d %H:%M:%S')
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self.user.update_total_spent(Decimal(str(self.total_price)))
+        if self.status == 'confirmed':
+            self.user.update_total_spent(self.total_price)
+
+@receiver(post_save, sender=Purchase)
+def update_total_spent(sender, instance, created, **kwargs):
+    if instance.status == 'confirmed' and created:
+        instance.user.update_total_spent(instance.total_price)
 
 
 class PurchaseItem(models.Model):
@@ -97,8 +110,13 @@ class RefuelingHistory(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self.user.update_total_refueled(self.fuel_quantity, self.fuel_cost)
+        if self.status == 'confirmed':
+            self.user.update_total_refueled(self.fuel_quantity, self.fuel_cost)
 
+@receiver(post_save, sender=RefuelingHistory)
+def update_total_refueled(sender, instance, created, **kwargs):
+    if instance.status == 'confirmed' and created:
+        instance.user.update_total_refueled(instance.fuel_quantity, instance.fuel_cost)
 
 class CarBrand(models.Model):
     name = models.CharField(max_length=100, unique=True)

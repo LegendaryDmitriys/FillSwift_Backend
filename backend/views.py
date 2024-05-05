@@ -34,6 +34,12 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Count, Sum, F, Value, DateTimeField
+from django.db.models.functions import TruncDay
+
+from rest_framework import generics
+from .models import Purchase, RefuelingHistory
+
 
 User = get_user_model()
 
@@ -173,12 +179,11 @@ class PurchaseDetail(generics.ListAPIView):
 
     def get_queryset(self):
         user_id = self.kwargs.get('user_id')
-        return Purchase.objects.filter(user_id=user_id)
-
+        return Purchase.objects.filter(user_id=user_id, status='confirmed')
 
 @receiver(post_save, sender=Purchase)
 def create_purchase_pdf_and_send_receipt(sender, instance, created, **kwargs):
-    if created:
+    if not created and instance.status == 'confirmed':
         pdf_buffer = generate_purchase_pdf(instance)
 
         file_path = f'{MEDIA_ROOT}/pdf_purchase/purchase_{instance.id}.pdf'
@@ -259,6 +264,66 @@ def download_purchase_receipt(request, purchase_id):
 
 
 
+def purchase_list(request):
+    purchases = Purchase.objects.all()
+    data = []
+
+    for purchase in purchases:
+        purchase_data = {
+            'id': purchase.id,
+            'total_price': purchase.total_price,
+            'purchase_date': purchase.formatted_date_time(),
+            'status': purchase.status,
+            'user': {
+                'id': purchase.user.id,
+                'username': purchase.user.username,
+                'email': purchase.user.email,
+                'firstname': purchase.user.firstname,
+                'lastname': purchase.user.lastname,
+            },
+            'products': []
+        }
+
+        for purchase_item in purchase.purchaseitem_set.all():
+            product_data = {
+                'id': purchase_item.product.id,
+                'name': purchase_item.product.name,
+                'description': purchase_item.product.description,
+                'quantity': purchase_item.quantity,
+                'product_type': purchase_item.product.product_type,
+                'price_per_unit': purchase_item.product.price_per_unit,
+                'manufacturer': purchase_item.product.manufacturer
+            }
+            purchase_data['products'].append(product_data)
+
+        data.append(purchase_data)
+
+    return JsonResponse({'purchases': data})
+
+@csrf_exempt
+def change_purchase_status(request, purchase_id):
+    try:
+        purchase = Purchase.objects.get(id=purchase_id)
+    except Purchase.DoesNotExist:
+        return JsonResponse({'message': 'Покупка не найдена'}, status=404)
+
+    if request.method == 'PATCH':
+        try:
+            request_data = json.loads(request.body)
+            new_status = request_data.get('status')
+        except json.JSONDecodeError:
+            return JsonResponse({'message': 'Неверный формат данных'}, status=400)
+
+        if new_status in dict(Purchase.STATUS_CHOICES):
+            purchase.status = new_status
+            purchase.save()
+            return JsonResponse({'message': 'Статус успешно изменен', 'new_status': new_status})
+        else:
+            return JsonResponse({'message': 'Недопустимое значение статуса'}, status=400)
+
+    return JsonResponse({'message': 'Метод не разрешен'}, status=405)
+
+
 class RefuelingHistoryListCreate(generics.ListCreateAPIView):
     queryset = RefuelingHistory.objects.all()
     serializer_class = RefuelingHistorySerializer
@@ -325,19 +390,17 @@ class UserRefuelingHistoryList(generics.ListAPIView):
 
     def get_queryset(self):
         user_id = self.kwargs['user_id']
-        return RefuelingHistory.objects.filter(user_id=user_id)
+        return RefuelingHistory.objects.filter(user_id=user_id, status='confirmed')
 
 
 @receiver(post_save, sender=RefuelingHistory)
 def create_refueling_pdf_and_send_receipt(sender, instance, created, **kwargs):
-    if created:
-
+    if not created and instance.status == 'confirmed':
         pdf_buffer = generate_refueling_pdf(instance)
 
         file_path = f'{MEDIA_ROOT}/pdf_refueling/refueling_{instance.id}.pdf'
         with open(file_path, 'wb') as f:
             f.write(pdf_buffer.getvalue())
-
 
         subject = 'Ваш чек с заправкой'
         message = 'Ваш чек с заправкой прикреплен к этому письму.'
@@ -404,7 +467,7 @@ def download_receipt(request, refueling_id):
 
 
 def refueling_requests_list(request):
-    refueling_requests = RefuelingHistory.objects.filter(status='pending').select_related('user', 'car', 'fuel_column', 'fuel_type').values(
+    refueling_requests = RefuelingHistory.objects.select_related('user', 'car', 'fuel_column', 'fuel_type').values(
         'id',
         'user__id', 'user__username', 'user__email', 'user__lastname', 'user__firstname',
         'car__id', 'car__model__name', 'car__brand__name', 'car__registration_number',
@@ -412,7 +475,8 @@ def refueling_requests_list(request):
         'fuel_type__id', 'fuel_type__name', 'fuel_column__fuel_type__octane_number',
         'fuel_quantity',
         'refueling_id',
-        'fuel_cost'
+        'fuel_cost',
+        'status'
     )
     return JsonResponse({'refueling_requests': list(refueling_requests)})
 
@@ -459,3 +523,32 @@ class PopularProductsAPIView(APIView):
         products = Product.objects.filter(id__in=product_ids)
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
+
+
+
+class PurchaseAndRefuelingStats(generics.ListAPIView):
+    def get(self, request, *args, **kwargs):
+        month = request.GET.get('month')
+        year = request.GET.get('year')
+
+        if month is None or year is None:
+            return JsonResponse({'error': 'Month and year parameters are required'}, status=400)
+
+        month = int(month)
+        year = int(year)
+
+        purchase_stats = Purchase.objects.filter(purchase_date__month=month, purchase_date__year=year) \
+            .annotate(day=TruncDay('purchase_date', output_field=DateTimeField())) \
+            .values('day') \
+            .annotate(count=Count('id')) \
+            .order_by('day')
+
+        refueling_stats = RefuelingHistory.objects.filter(refueling_date_time__month=month,
+                                                          refueling_date_time__year=year) \
+            .annotate(day=TruncDay('refueling_date_time')) \
+            .values('day') \
+            .annotate(count=Count('id'), total_cost=Sum('fuel_cost'), category=Value('refueling'),
+                      status=Value('refueling')) \
+            .order_by('day')
+
+        return JsonResponse({'purchases': list(purchase_stats), 'refuelings': list(refueling_stats)})
