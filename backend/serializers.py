@@ -123,6 +123,12 @@ class FuelStationSerializer(serializers.ModelSerializer):
     class Meta:
         model = FuelStation
         fields = '__all__'
+        extra_kwargs = {
+            'name': {'required': False},
+            'location': {'required': False},
+            'latitude': {'required': False},
+            'longitude': {'required': False},
+        }
 
     def get_fuel_types(self, obj):
         fuel_types = obj.fuel_type.all()
@@ -133,3 +139,5 @@ class FuelStationSerializer(serializers.ModelSerializer):
         fuel_columns = FuelColumnSerializer(instance.columns.all(), many=True).data
         data['fuel_columns'] = fuel_columns
         return data
+
+

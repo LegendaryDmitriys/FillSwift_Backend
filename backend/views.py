@@ -19,10 +19,10 @@ import os
 from Gas import settings
 from Gas.settings import MEDIA_ROOT, DEFAULT_FROM_EMAIL
 from backend.models import Product, RefuelingHistory, CarBrand, CarModel, Car, Basket, BasketProduct, FuelStation, \
-    Purchase, PurchaseItem, ProductImage
+    Purchase, PurchaseItem, ProductImage, FuelColumn, FuelType
 from backend.serializers import ProductSerializer, RefuelingHistorySerializer, \
     CarModelSerializer, CarBrandSerializer, CarSerializer, BasketSerializer, BasketProductSerializer, \
-    FuelStationSerializer, CarBrandWithModelsSerializer, PurchaseSerializer
+    FuelStationSerializer, CarBrandWithModelsSerializer, PurchaseSerializer, FuelColumnSerializer, FuelTypeSerializer
 
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -517,14 +517,12 @@ class FuelStationDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 class PopularProductsAPIView(APIView):
     def get(self, request):
-        popular_products = BasketProduct.objects.values('product').annotate(total_sales=Sum('quantity')).order_by(
+        popular_products = PurchaseItem.objects.values('product').annotate(total_sales=Count('product')).order_by(
             '-total_sales')[:10]
         product_ids = [item['product'] for item in popular_products]
         products = Product.objects.filter(id__in=product_ids)
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
-
-
 
 class PurchaseAndRefuelingStats(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
@@ -552,3 +550,37 @@ class PurchaseAndRefuelingStats(generics.ListAPIView):
             .order_by('day')
 
         return JsonResponse({'purchases': list(purchase_stats), 'refuelings': list(refueling_stats)})
+
+
+class FuelColumnListCreateAPIView(generics.ListCreateAPIView):
+    queryset = FuelColumn.objects.all()
+    serializer_class = FuelColumnSerializer
+
+class FuelColumnListByStationAPIView(generics.ListCreateAPIView):
+    serializer_class = FuelColumnSerializer
+
+    def get_queryset(self):
+        fuel_station_id = self.kwargs.get('fuel_station_id')
+        return FuelColumn.objects.filter(fuel_station_id=fuel_station_id)
+
+    def perform_create(self, serializer):
+        fuel_station_id = self.kwargs.get('fuel_station_id')
+        serializer.save(fuel_station_id=fuel_station_id)
+
+
+class FuelColumnDetailByStationAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FuelColumn.objects.all()
+    serializer_class = FuelColumnSerializer
+    lookup_url_kwarg = 'fuel_column_id'
+
+    def get_queryset(self):
+        fuel_station_id = self.kwargs.get('fuel_station_id')
+        return FuelColumn.objects.filter(fuel_station_id=fuel_station_id)
+
+class FuelTypeListCreateAPIView(generics.ListCreateAPIView):
+    queryset = FuelType.objects.all()
+    serializer_class = FuelTypeSerializer
+
+class FuelTypeDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FuelType.objects.all()
+    serializer_class = FuelTypeSerializer

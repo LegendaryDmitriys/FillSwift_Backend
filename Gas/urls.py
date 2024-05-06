@@ -33,7 +33,13 @@ card_patterns = [
 
 fuelstation_patterns = [
     path('list/', FuelStationListCreateAPIView.as_view(), name='fuelstation-list-create'),
-    path('<int:pk>/', FuelStationDetailAPIView.as_view(), name='fuelstation-detail')
+    path('<int:pk>/', FuelStationDetailAPIView.as_view(), name='fuelstation-detail'),
+    path('fuelcolumns/', FuelColumnListCreateAPIView.as_view(), name='fuelcolumn-list-create'),
+    path('fuelcolumn/<int:fuel_station_id>', FuelColumnListByStationAPIView.as_view(), name='fuelcolumn-list-by-station'),
+    path('<int:fuel_station_id>/fuelcolumn/<int:fuel_column_id>/',
+         FuelColumnDetailByStationAPIView.as_view(), name='fuelcolumn-detail-by-station'),
+    path('fueltypes/', FuelTypeListCreateAPIView.as_view(), name='fueltype-list'),
+    path('fueltypes/<int:pk>/', FuelTypeDetailAPIView.as_view(), name='fueltype-detail'),
 ]
 
 product_patterns = [
