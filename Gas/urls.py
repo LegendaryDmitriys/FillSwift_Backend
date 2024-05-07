@@ -71,6 +71,7 @@ urlpatterns = [
     path('refuling/', include(refulings_patterns)),
     path('cars/', include(cars_patterns)),
     path('fuelstation/', include(fuelstation_patterns)),
-    path('stats/', PurchaseAndRefuelingStats.as_view(), name='stats')
+    path('stats/', PurchaseAndRefuelingStats.as_view(), name='stats'),
+    path('user-history-count/<int:user_id>/', UserHistoryCountAPIView.as_view(), name='user_history_count'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

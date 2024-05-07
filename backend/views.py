@@ -584,3 +584,13 @@ class FuelTypeListCreateAPIView(generics.ListCreateAPIView):
 class FuelTypeDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = FuelType.objects.all()
     serializer_class = FuelTypeSerializer
+
+
+class UserHistoryCountAPIView(APIView):
+    def get(self, request, user_id, format=None):
+        refueling_count = RefuelingHistory.objects.filter(user_id=user_id).count()
+        purchase_count = Purchase.objects.filter(user_id=user_id).count()
+        return Response({
+            'refueling_count': refueling_count,
+            'purchase_count': purchase_count
+        }, status=status.HTTP_200_OK)
