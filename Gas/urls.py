@@ -61,6 +61,12 @@ cars_patterns = [
 
 ]
 
+stats_patterns = [
+    path('avg-fuel-quantity/', AvgFuelQuantityStats.as_view(), name='avg-fuel-quantity'),
+    path('car-brand-model-stats/', CarBrandModelStats.as_view(), name='car-brand-model-stats'),
+    path('total-products-sold/', TotalProductsSoldStats.as_view(), name='total-products-sold'),
+    path('avg-purchase-price/', AvgPurchasePriceStats.as_view(), name='avg-purchase-price'),
+]
 
 
 urlpatterns = [
@@ -72,6 +78,7 @@ urlpatterns = [
     path('cars/', include(cars_patterns)),
     path('fuelstation/', include(fuelstation_patterns)),
     path('stats/', PurchaseAndRefuelingStats.as_view(), name='stats'),
+    path('statistic/', include(stats_patterns)),
     path('user-history-count/<int:user_id>/', UserHistoryCountAPIView.as_view(), name='user_history_count'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

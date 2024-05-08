@@ -467,7 +467,7 @@ def download_receipt(request, refueling_id):
 
 
 def refueling_requests_list(request):
-    refueling_requests = RefuelingHistory.objects.select_related('user', 'car', 'fuel_column', 'fuel_type').values(
+    refueling_requests = RefuelingHistory.objects.select_related('user', 'car', 'fuel_column', 'fuel_type','h').values(
         'id',
         'user__id', 'user__username', 'user__email', 'user__lastname', 'user__firstname',
         'car__id', 'car__model__name', 'car__brand__name', 'car__registration_number',
@@ -476,6 +476,7 @@ def refueling_requests_list(request):
         'fuel_quantity',
         'refueling_id',
         'fuel_cost',
+        'refueling_date_time',
         'status'
     )
     return JsonResponse({'refueling_requests': list(refueling_requests)})
@@ -594,3 +595,30 @@ class UserHistoryCountAPIView(APIView):
             'refueling_count': refueling_count,
             'purchase_count': purchase_count
         }, status=status.HTTP_200_OK)
+
+
+# графики
+
+from django.db.models import Avg
+class AvgFuelQuantityStats(APIView):
+    def get(self, request):
+        avg_fuel_quantity = RefuelingHistory.objects.aggregate(avg_fuel_quantity=Avg('fuel_quantity'))
+        return Response(avg_fuel_quantity)
+
+class CarBrandModelStats(APIView):
+    def get(self, request):
+        car_brand_model_stats = Car.objects.values('brand__name', 'model__name').annotate(count=Count('id'))
+        return Response(car_brand_model_stats)
+
+
+
+class TotalProductsSoldStats(APIView):
+    def get(self, request):
+        total_products_sold = PurchaseItem.objects.filter(purchase__purchase_date__month=5, purchase__purchase_date__year=2024).aggregate(total_products_sold=Sum('quantity'))
+        return Response(total_products_sold)
+
+
+class AvgPurchasePriceStats(APIView):
+    def get(self, request):
+        avg_purchase_price = Purchase.objects.aggregate(avg_purchase_price=Avg('total_price'))
+        return Response(avg_purchase_price)
