@@ -173,6 +173,8 @@ class PurchaseListCreate(APIView):
 
 
 
+
+
 class PurchaseDetail(generics.ListAPIView):
     queryset = Purchase.objects.all()
     serializer_class = PurchaseSerializer
@@ -522,8 +524,17 @@ class PopularProductsAPIView(APIView):
             '-total_sales')[:10]
         product_ids = [item['product'] for item in popular_products]
         products = Product.objects.filter(id__in=product_ids)
-        serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
+        popular_products_with_count = []
+        for item in popular_products:
+            product_id = item['product']
+            product_count = item['total_sales']
+            product = products.get(id=product_id)
+            serialized_product = ProductSerializer(product).data
+            serialized_product['total_sales'] = product_count
+            popular_products_with_count.append(serialized_product)
+
+        return Response(popular_products_with_count)
+
 
 class PurchaseAndRefuelingStats(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
@@ -622,3 +633,23 @@ class AvgPurchasePriceStats(APIView):
     def get(self, request):
         avg_purchase_price = Purchase.objects.aggregate(avg_purchase_price=Avg('total_price'))
         return Response(avg_purchase_price)
+
+class TotalFuelRefueledStats(APIView):
+    def get(self, request):
+        total_fuel_refueled_by_month_year = RefuelingHistory.objects.values('refueling_date_time__month', 'refueling_date_time__year').annotate(total_fuel_refueled=Sum('fuel_quantity'))
+        return Response(total_fuel_refueled_by_month_year)
+
+
+class TotalSpentStats(APIView):
+    def get(self, request):
+        total_spent_on_products = Purchase.objects.filter(status='confirmed').aggregate(total_spent=Sum('total_price'))
+        total_spent_on_products = total_spent_on_products['total_spent'] or 0
+
+
+        total_spent_on_refuelings = RefuelingHistory.objects.filter(status='confirmed').aggregate(
+            total_spent=Sum('fuel_cost'))
+        total_spent_on_refuelings = total_spent_on_refuelings['total_spent'] or 0
+
+        total_spent = total_spent_on_products + total_spent_on_refuelings
+
+        return Response({'total_spent': total_spent})

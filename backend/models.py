@@ -86,6 +86,16 @@ class PurchaseItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField()
 
+@receiver(post_save, sender=PurchaseItem)
+def update_product_quantity(sender, instance, created, **kwargs):
+    if created:
+        product = instance.product
+        product.quantity -= instance.quantity
+        if product.quantity <= 0:
+            product.delete()
+        else:
+            product.save()
+
 class RefuelingHistory(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     car = models.ForeignKey('Car', on_delete=models.CASCADE)
@@ -112,6 +122,9 @@ class RefuelingHistory(models.Model):
         super().save(*args, **kwargs)
         if self.status == 'confirmed':
             self.user.update_total_refueled(self.fuel_quantity, self.fuel_cost)
+
+
+
 
 @receiver(post_save, sender=RefuelingHistory)
 def update_total_refueled(sender, instance, created, **kwargs):

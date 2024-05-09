@@ -66,6 +66,8 @@ stats_patterns = [
     path('car-brand-model-stats/', CarBrandModelStats.as_view(), name='car-brand-model-stats'),
     path('total-products-sold/', TotalProductsSoldStats.as_view(), name='total-products-sold'),
     path('avg-purchase-price/', AvgPurchasePriceStats.as_view(), name='avg-purchase-price'),
+    path('total-fuel-refueled-stats/', TotalFuelRefueledStats.as_view(), name='total-fuel-refueled-stats'),
+    path('total-spent-stats/',TotalSpentStats.as_view(), name='total-spent-stats')
 ]
 
 
