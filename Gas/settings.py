@@ -17,7 +17,8 @@ SECRET_KEY = 'django-insecure-#=r^@e)vp7m2ow!vlj(!7369dwqil#$_noexu9iz3mnpg=kw7$
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    '192.168.0.106'
+    '192.168.0.106',
+    'localhost'
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -85,13 +86,14 @@ WSGI_APPLICATION = 'Gas.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Gas',
-        'USER': 'postgres',
-        'PASSWORD': 'admin',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('POSTGRES_DB', 'Gas'),
+        'USER': os.getenv('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('POSTGRES_HOST'),
+        'PORT': os.getenv('POSTGRES_PORT', 5432)
     }
 }
+
 
 
 # Password validation
