@@ -6,10 +6,10 @@ from .views import (
 
 app_name = 'authentication'
 urlpatterns = [
-    path('user', UserRetrieveUpdateAPIView.as_view()),
+    path('user', UserRetrieveUpdateAPIView.as_view(), name='user'),
     path('user-list', UserListAPIView.as_view(), name='user-list'),
     path('users/<int:id>/', UserDetailsRetrieveUpdateDestroyAPIView.as_view(), name='user-details'),
-    path('users/', RegistrationAPIView.as_view()),
+    path('users/', RegistrationAPIView.as_view(), name='registration'),
     path('users/login/', LoginAPIView.as_view()),
     path('reset-password/generate-code/', generate_code, name='generate_code'),
     path('reset-password-admin/', reset_password_admin, name='reset_password_admin'),

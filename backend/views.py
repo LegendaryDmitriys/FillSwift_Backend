@@ -22,7 +22,8 @@ from backend.models import Product, RefuelingHistory, CarBrand, CarModel, Car, B
     Purchase, PurchaseItem, ProductImage, FuelColumn, FuelType
 from backend.serializers import ProductSerializer, RefuelingHistorySerializer, \
     CarModelSerializer, CarBrandSerializer, CarSerializer, BasketSerializer, BasketProductSerializer, \
-    FuelStationSerializer, CarBrandWithModelsSerializer, PurchaseSerializer, FuelColumnSerializer, FuelTypeSerializer
+    FuelStationSerializer, CarBrandWithModelsSerializer, PurchaseSerializer, FuelColumnSerializer, FuelTypeSerializer, \
+    ProductImageSerializer
 
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -43,15 +44,46 @@ from .models import Purchase, RefuelingHistory
 
 User = get_user_model()
 
-
+from rest_framework.parsers import MultiPartParser, FormParser
 class ProductListCreate(generics.ListCreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    parser_classes = (MultiPartParser, FormParser)
 
+    def perform_create(self, serializer):
+        serializer.save()
+        images = self.request.FILES.getlist('images')
+        for image in images:
+            ProductImage.objects.create(product=serializer.instance, image=image)
 
 class ProductRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+class ProductImageUpload(generics.CreateAPIView):
+    queryset = ProductImage.objects.all()
+    serializer_class = ProductImageSerializer
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, *args, **kwargs):
+        product_id = request.query_params.get('product_id')
+        if not product_id:
+            return Response({"message": "No product_id provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({"message": "Product does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+        if 'image' not in request.FILES:
+            return Response({"message": "No image provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        image = request.FILES['image']
+        product_image = ProductImage(product=product, image=image)
+        product_image.save()
+
+        serializer = ProductImageSerializer(product_image)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class BasketListCreateAPIView(generics.ListCreateAPIView):

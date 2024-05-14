@@ -27,7 +27,7 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=128, write_only=True)
     token = serializers.CharField(max_length=255, read_only=True)
     is_staff = serializers.BooleanField(read_only=True)
-
+    operator =serializers.BooleanField(read_only=True)
     def validate(self, data):
         email = data.get('email', None)
         password = data.get('password', None)
@@ -61,6 +61,7 @@ class LoginSerializer(serializers.Serializer):
             'username': user.username,
             'token': user.token,
             'is_staff': user.is_staff,
+            'operator': user.operator
         }
 
 class UserSerializer(serializers.ModelSerializer):
@@ -75,7 +76,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'password', 'token', 'lastname', 'firstname', 'id', 'avatar', 'total_spent', 'total_refueled')
+        fields = ('email', 'username', 'password', 'token', 'lastname', 'firstname', 'id', 'avatar', 'total_spent', 'total_refueled','operator')
 
         read_only_fields = ('token',)
 

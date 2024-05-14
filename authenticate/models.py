@@ -6,6 +6,7 @@ from django.contrib.auth.models import PermissionsMixin
 from datetime import datetime, timedelta
 from django.db import models
 
+
 from Gas import settings
 from django.utils import timezone
 import random
@@ -52,6 +53,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(db_index=True, unique=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    operator = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     avatar = models.ImageField(upload_to='avatars', null=True, blank=True)

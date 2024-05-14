@@ -18,6 +18,16 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = '__all__'
 
+    def get_images(self, obj):
+        images = ProductImage.objects.filter(product=obj)
+        return [ProductImageSerializer(image).data for image in images]
+
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ('id', 'image', 'product_id')
+
 class PurchaseItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
 

@@ -25,7 +25,7 @@ card_patterns = [
     path('basket-products/<int:basket_id>/', BasketProductListAPIView.as_view(), name='basketproduct-detail'),
     path('basket-products/<int:basket_id>/<int:pk>/', BasketProductRetrieveUpdateDestroyAPIView.as_view(),
          name='basket-product-detail'),
-    path('purchases/', PurchaseListCreate.as_view(), name='purchase-list'),
+    path('purchases/', PurchaseListCreate.as_view(), name='purchase-list-create'),
     path('purchase/<int:user_id>/', PurchaseDetail.as_view(), name='purchase-detail'),
     path('purchases-list/', purchase_list, name='purchase-list'),
     path('purchase/<int:purchase_id>/change_status/', change_purchase_status, name='change_purchase_status'),
@@ -46,6 +46,7 @@ product_patterns = [
     path('products/', ProductListCreate.as_view(), name='product-list-create'),
     path('products/<int:pk>/', ProductRetrieveUpdateDestroy.as_view(), name='product-retrieve-update-destroy'),
     path('popular-products/', PopularProductsAPIView.as_view(), name='popular-products'),
+    path('upload-image/', ProductImageUpload.as_view(), name='product_image_upload'),
 ]
 
 cars_patterns = [
