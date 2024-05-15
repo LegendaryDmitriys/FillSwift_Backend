@@ -68,15 +68,18 @@ class ProductImageUpload(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         product_id = request.query_params.get('product_id')
         if not product_id:
-            return Response({"message": "No product_id provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Product_id не указан."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             product = Product.objects.get(id=product_id)
         except Product.DoesNotExist:
-            return Response({"message": "Product does not exist."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Товара не существует."}, status=status.HTTP_404_NOT_FOUND)
+
+        if ProductImage.objects.filter(product=product).count() >= 4:
+            return Response({"message": "Можно загрузить не более 4 изображений для одного товара."}, status=status.HTTP_400_BAD_REQUEST)
 
         if 'image' not in request.FILES:
-            return Response({"message": "No image provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Изображение не предоставлено."}, status=status.HTTP_400_BAD_REQUEST)
 
         image = request.FILES['image']
         product_image = ProductImage(product=product, image=image)
@@ -84,6 +87,18 @@ class ProductImageUpload(generics.CreateAPIView):
 
         serializer = ProductImageSerializer(product_image)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class ProductImageDelete(generics.DestroyAPIView):
+    queryset = ProductImage.objects.all()
+    serializer_class = ProductImageSerializer
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            image = self.get_object()
+            image.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProductImage.DoesNotExist:
+            return Response({"message": "Изображение не найдено."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class BasketListCreateAPIView(generics.ListCreateAPIView):

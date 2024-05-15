@@ -7,10 +7,12 @@ from backend.models import Product, RefuelingHistory, CarModel, CarBrand, Car, B
     FuelType, FuelColumn, ProductImage, Purchase, PurchaseItem
 
 
+
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
-        fields = ('image',)
+        fields = ('id', 'image', 'product_id')
+
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
@@ -23,10 +25,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return [ProductImageSerializer(image).data for image in images]
 
 
-class ProductImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProductImage
-        fields = ('id', 'image', 'product_id')
+
 
 class PurchaseItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer()

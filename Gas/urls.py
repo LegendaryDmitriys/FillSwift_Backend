@@ -47,6 +47,7 @@ product_patterns = [
     path('products/<int:pk>/', ProductRetrieveUpdateDestroy.as_view(), name='product-retrieve-update-destroy'),
     path('popular-products/', PopularProductsAPIView.as_view(), name='popular-products'),
     path('upload-image/', ProductImageUpload.as_view(), name='product_image_upload'),
+    path('delete-image/<int:pk>/', ProductImageDelete.as_view(), name='product-image-delete'),
 ]
 
 cars_patterns = [

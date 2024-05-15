@@ -1,6 +1,5 @@
-# models.py
 import os
-from decimal import Decimal
+
 
 from django.db import models
 from django.conf import settings
@@ -8,13 +7,15 @@ from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+import uuid
 
 User = get_user_model()
 
 
 def product_image_path(instance, filename):
-    basename, extension = os.path.splitext(filename)
-    new_filename = f"{instance.product.name}_{instance.id}{extension}"
+    unique_filename = uuid.uuid4().hex[:10]
+    _, extension = os.path.splitext(filename)
+    new_filename = f"{instance.product.name}_{unique_filename}{extension}"
     return os.path.join('product_images', new_filename)
 
 
@@ -184,7 +185,6 @@ class FuelStation(models.Model):
     latitude = models.FloatField()
     longitude = models.FloatField()
     fuel_type = models.ManyToManyField(FuelType, related_name='fuel_stations', through='FuelColumn')
-    fuel_quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
         return self.name
